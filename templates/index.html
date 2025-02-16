@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Mock Interview</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        video {
+            width: 640px;
+            height: 480px;
+            border: 2px solid black;
+        }
+        #feedback {
+            margin-top: 20px;
+            color: white;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body style="background-color: #1a202c; color: white; text-align: center;">
+
+    <h1>Virtual Mock Interview</h1>
+
+    <h2>Facial Expression Analysis</h2>
+    <video id="webcam" autoplay></video>
+    <button onclick="captureFace()">Analyze Face</button>
+    <div id="faceFeedback"></div>
+
+    <h2>Speech Clarity Analysis</h2>
+    <input type="file" id="audioFile" accept="audio/*">
+    <button onclick="analyzeSpeech()">Analyze Speech</button>
+    <div id="speechFeedback"></div>
+
+    <script>
+        // Access webcam
+        const videoElement = document.getElementById("webcam");
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            videoElement.srcObject = stream;
+        });
+
+        // Capture face and send to backend for analysis
+        function captureFace() {
+            const canvas = document.createElement("canvas");
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append("image", blob);
+
+                axios.post("/analyze_face", formData)
+                    .then(response => {
+                        document.getElementById("faceFeedback").innerText = "Detected Emotion: " + response.data.emotion;
+                    });
+            }, "image/jpeg");
+        }
+
+        // Analyze speech clarity
+        function analyzeSpeech() {
+            let fileInput = document.getElementById("audioFile");
+            if (!fileInput.files.length) {
+                alert("Please upload an audio file.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("audio", fileInput.files[0]);
+
+            axios.post("/analyze_audio", formData)
+                .then(response => {
+                    let text = response.data.text || "Could not recognize speech";
+                    let clarity = response.data.clarity_score || "N/A";
+                    document.getElementById("speechFeedback").innerHTML = `Transcribed Text: ${text}<br>Clarity Score: ${clarity}`;
+                });
+        }
+    </script>
+</body>
+</html>

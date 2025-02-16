@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mock Interview</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="ai-container">
+            <img id="aiAvatar" src="/static/avatar.png" class="ai-avatar" alt="AI Interviewer">
+            <audio id="aiVoice" controls></audio>
+            <h2 id="questionText">Welcome! Click "Next" to begin.</h2>
+            <button class="next-btn" onclick="getNextQuestion()">Next</button>
+        </div>
+
+        <div class="user-section">
+            <h2>Live Camera Analysis</h2>
+            <video id="webcam" autoplay></video>
+            <button class="record-btn" onclick="startRecording()">🎤 Start Answer</button>
+            <button class="stop-btn" onclick="stopRecording()">⏹ Stop Answer</button>
+        </div>
+
+        <div id="popup"></div>
+
+        <div id="feedbackModal">
+            <h2 class="feedback-title">Final Interview Report</h2>
+            <p class="feedback-content" id="feedbackText">Your results will be displayed here.</p>
+            <button class="close-btn" onclick="closeReport()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestionIndex = 0;
+        let finalFeedback = "";
+        let responseReady = false;
+
+        const video = document.getElementById("webcam");
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            video.srcObject = stream;
+        });
+
+        let mediaRecorder;
+        let audioChunks = [];
+
+        function showPopup(message, isError = false) {
+            let popup = document.getElementById("popup");
+            popup.innerText = message;
+            popup.style.display = "block";
+            popup.style.backgroundColor = isError ? "#D32F2F" : "#1565C0";
+            setTimeout(() => { popup.style.display = "none"; }, 2000);
+        }
+
+        function getNextQuestion() {
+            axios.get(`/get_question/${currentQuestionIndex}`).then(response => {
+                document.getElementById("questionText").innerText = response.data.question;
+                document.getElementById("aiVoice").src = response.data.audio_url;
+                currentQuestionIndex++;
+
+                if (response.data.index === -1) {
+                    document.querySelector(".next-btn").style.display = "none";
+                    document.querySelector(".record-btn").style.display = "none";
+                    document.querySelector(".stop-btn").style.display = "none";
+
+                    let reportBtn = document.createElement("button");
+                    reportBtn.innerText = "View Report";
+                    reportBtn.classList.add("report-btn");
+                    reportBtn.onclick = () => viewReport();
+                    document.querySelector(".container").appendChild(reportBtn);
+                }
+            });
+        }
+
+        function startRecording() {
+            showPopup("🎤 Recording Started...");
+            audioChunks = [];
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                mediaRecorder.onstop = processRecording;
+            });
+        }
+
+        async function processRecording() {
+            showPopup("⏹ Processing Response...");
+            const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+            let formData = new FormData();
+            formData.append("audio", audioBlob);
+
+            try {
+                let response = await axios.post("/analyze_response", formData);
+                if (response.data.error) {
+                    showPopup("⚠️ Error processing response. Try again.", true);
+                } else {
+                    finalFeedback = `
+                        <h3><b>Speech Clarity:</b> ${response.data.clarity_score}/100</h3>
+                        <h3><b>Emotion Detected:</b> ${response.data.emotion}</h3>
+                        <h3><b>Transcription:</b> "${response.data.transcription}"</h3>
+                        <h3><b>Fluency & Confidence:</b> ${response.data.fluency_score}/100</h3>
+                        <h3><b>Engagement Level:</b> ${response.data.engagement_score}/100</h3>
+                        <h2><b>Final Score:</b> ${response.data.final_score}/100</h2>
+                        <p><b>Improvements:</b> ${response.data.improvements}</p>
+                    `;
+                    responseReady = true;
+                    showPopup("✅ Response saved! You can view your report after the interview.");
+                }
+            } catch (error) {
+                console.error("Server Error:", error);
+                showPopup("⚠️ Server error. Try again later.", true);
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.stop();
+            } else {
+                showPopup("⚠️ No recording found!", true);
+            }
+        }
+
+        function viewReport() {
+            if (!responseReady) {
+                document.getElementById("feedbackText").innerHTML = "<p>Processing... Please wait a moment.</p>";
+                setTimeout(viewReport, 1000);
+            } else {
+                document.getElementById("feedbackText").innerHTML = finalFeedback;
+                document.getElementById("feedbackModal").style.display = "block";
+            }
+        }
+
+        function closeReport() {
+            document.getElementById("feedbackModal").style.display = "none";
+        }
+    </script>
+
+</body>
+</html>
+
+
+
+

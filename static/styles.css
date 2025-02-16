@@ -1,0 +1,95 @@
+/* General Page Styling */
+body {
+    background-color: #0D1B2A; /* Darker Blue */
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 20px;
+    color: white;
+}
+
+/* Center the Main Interview Container */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 750px;
+    margin: auto;
+    background: #1B263B; /* Dark Blue Box */
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* AI Interviewer Section */
+.ai-avatar {
+    width: 160px;
+    animation: talk 1s infinite alternate;
+}
+
+@keyframes talk {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.05); }
+}
+
+/* Buttons */
+.next-btn, .record-btn, .stop-btn, .report-btn {
+    background-color: #1E90FF; /* Bright Blue */
+    padding: 12px 24px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: white;
+    transition: 0.3s ease-in-out;
+    margin-top: 15px;
+}
+
+.next-btn:hover, .record-btn:hover, .stop-btn:hover, .report-btn:hover {
+    background-color: #1565C0;
+}
+
+/* Pop-up Notification */
+#popup {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1565C0;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 16px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+/* Feedback Report Modal */
+#feedbackModal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #112D4E;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: left;
+    color: white;
+    width: 50%;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+/* Modal Close Button */
+.close-btn {
+    background-color: #FF3B30;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    color: white;
+    border: none;
+    margin-top: 10px;
+}
