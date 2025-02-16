@@ -3,13 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Mock Interview</title>
+    <title>Career Navigator</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
+    <header>
+        <h1>Career Navigator</h1>
+        <nav>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#mock-interview">Mock Interview</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
 
-    <div class="container">
+    <section id="home">
+        <h2>Welcome to Career Navigator</h2>
+        <p>Get AI-driven career guidance, resume optimization, and interview preparation.</p>
+    </section>
+
+    <!-- Mock Interview Section -->
+    <section id="mock-interview">
+        <h2>AI Mock Interview</h2>
         <div class="ai-container">
             <img id="aiAvatar" src="/static/avatar.png" class="ai-avatar" alt="AI Interviewer">
             <audio id="aiVoice" controls></audio>
@@ -31,28 +48,16 @@
             <p class="feedback-content" id="feedbackText">Your results will be displayed here.</p>
             <button class="close-btn" onclick="closeReport()">Close</button>
         </div>
-    </div>
+    </section>
 
     <script>
         let currentQuestionIndex = 0;
         let finalFeedback = "";
         let responseReady = false;
-
         const video = document.getElementById("webcam");
         navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
             video.srcObject = stream;
         });
-
-        let mediaRecorder;
-        let audioChunks = [];
-
-        function showPopup(message, isError = false) {
-            let popup = document.getElementById("popup");
-            popup.innerText = message;
-            popup.style.display = "block";
-            popup.style.backgroundColor = isError ? "#D32F2F" : "#1565C0";
-            setTimeout(() => { popup.style.display = "none"; }, 2000);
-        }
 
         function getNextQuestion() {
             axios.get(`/get_question/${currentQuestionIndex}`).then(response => {
@@ -64,12 +69,7 @@
                     document.querySelector(".next-btn").style.display = "none";
                     document.querySelector(".record-btn").style.display = "none";
                     document.querySelector(".stop-btn").style.display = "none";
-
-                    let reportBtn = document.createElement("button");
-                    reportBtn.innerText = "View Report";
-                    reportBtn.classList.add("report-btn");
-                    reportBtn.onclick = () => viewReport();
-                    document.querySelector(".container").appendChild(reportBtn);
+                    setTimeout(() => { viewReport(); }, 2000);
                 }
             });
         }
@@ -95,50 +95,29 @@
 
             try {
                 let response = await axios.post("/analyze_response", formData);
-                if (response.data.error) {
-                    showPopup("⚠️ Error processing response. Try again.", true);
-                } else {
+                if (!response.data.error) {
                     finalFeedback = `
                         <h3><b>Speech Clarity:</b> ${response.data.clarity_score}/100</h3>
-                        <h3><b>Emotion Detected:</b> ${response.data.emotion}</h3>
-                        <h3><b>Transcription:</b> "${response.data.transcription}"</h3>
-                        <h3><b>Fluency & Confidence:</b> ${response.data.fluency_score}/100</h3>
-                        <h3><b>Engagement Level:</b> ${response.data.engagement_score}/100</h3>
                         <h2><b>Final Score:</b> ${response.data.final_score}/100</h2>
                         <p><b>Improvements:</b> ${response.data.improvements}</p>
                     `;
                     responseReady = true;
-                    showPopup("✅ Response saved! You can view your report after the interview.");
                 }
             } catch (error) {
                 console.error("Server Error:", error);
-                showPopup("⚠️ Server error. Try again later.", true);
-            }
-        }
-
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state === "recording") {
-                mediaRecorder.stop();
-            } else {
-                showPopup("⚠️ No recording found!", true);
             }
         }
 
         function viewReport() {
             if (!responseReady) {
-                document.getElementById("feedbackText").innerHTML = "<p>Processing... Please wait a moment.</p>";
+                document.getElementById("feedbackText").innerHTML = "<p>Processing... Please wait.</p>";
                 setTimeout(viewReport, 1000);
             } else {
                 document.getElementById("feedbackText").innerHTML = finalFeedback;
                 document.getElementById("feedbackModal").style.display = "block";
             }
         }
-
-        function closeReport() {
-            document.getElementById("feedbackModal").style.display = "none";
-        }
     </script>
-
 </body>
 </html>
 

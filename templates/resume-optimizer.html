@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Optimization</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-700 p-6 text-white flex justify-between items-center shadow-lg">
+        <h1 class="text-4xl font-extrabold">Career Path Navigator</h1>
+        <div class="space-x-6 text-lg">
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('mock_interview') }}">Mock Interview</a>
+            <a href="{{ url_for('resume_optimizer') }}">Resume Optimization</a>
+        </div>
+    </nav>
+
+    <!-- Resume Optimization Section -->
+    <section class="container mx-auto p-8 bg-gray-800 shadow-xl rounded-lg text-center mt-20">
+        <h2 class="text-4xl font-bold text-green-400">Resume Optimization</h2>
+        <p class="text-lg">Upload your resume and job description to enhance alignment.</p>
+        <div class="mt-6">
+            <input type="file" id="resumeFile" class="p-2 bg-gray-700 text-white rounded" accept=".pdf,.doc,.docx">
+            <textarea id="jobDescription" class="p-2 mt-4 w-full bg-gray-700 text-white rounded" placeholder="Paste the job description here..."></textarea>
+            <button class="mt-4 px-6 py-2 bg-blue-600 text-white rounded" onclick="optimizeResume()">Optimize Resume</button>
+        </div>
+        <div id="resumeFeedback" class="mt-6 text-left text-white"></div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-700 text-white text-center p-6 mt-10 shadow-md">
+        <p>&copy; 2025 Career Path Navigator. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        function optimizeResume() {
+            let fileInput = document.getElementById("resumeFile");
+            let jobDesc = document.getElementById("jobDescription").value;
+            if (!fileInput.files.length || !jobDesc) {
+                alert("Please upload a resume and enter a job description.");
+                return;
+            }
+            let formData = new FormData();
+            formData.append("resume", fileInput.files[0]);
+            formData.append("job_description", jobDesc);
+
+            axios.post("http://127.0.0.1:5000/upload", formData)
+                .then(response => {
+                    let data = response.data;
+                    let resultDiv = document.getElementById("resumeFeedback");
+                    resultDiv.innerHTML = `
+                        <h3 class='text-xl font-bold mt-4'>Improved Resume:</h3>
+                        <p><b>Education:</b> ${data.improved_resume.Education}</p>
+                        <p><b>Experience:</b> ${data.improved_resume.Experience}</p>
+                        <p><b>Skills:</b> ${data.improved_resume.Skills}</p>
+                        <h3 class='text-xl font-bold mt-4'>Analysis:</h3>
+                        <p><b>Match Score:</b> ${data.analysis.similarity_score}%</p>
+                        <p><b>Missing Keywords:</b> ${data.analysis.missing_keywords.join(", ")}</p>
+                    `;
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Error optimizing resume. Try again.");
+                });
+        }
+    </script>
+
+</body>
+</html>
+

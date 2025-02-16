@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mock Interview</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="ai-container">
+            <img id="aiAvatar" src="/static/avatar.png" class="ai-avatar" alt="AI Interviewer">
+            <audio id="aiVoice" controls></audio>
+            <h2 id="questionText">Welcome! Click "Next" to begin.</h2>
+            <button class="next-btn" onclick="getNextQuestion()">Next</button>
+        </div>
+
+        <div class="user-section">
+            <h2>Live Camera Analysis</h2>
+            <video id="webcam" autoplay playsinline></video>
+            <button class="record-btn" onclick="startRecording()">🎤 Start Answer</button>
+        </div>
+
+        <!-- Popups for Start/Stop Recording -->
+        <div id="popup" class="popup"></div>
+
+        <!-- Feedback Popup -->
+        <div id="feedbackModal" class="feedback-popup" style="display:none;">
+            <h2 class="feedback-title">Final Interview Report</h2>
+            <p class="feedback-content" id="feedbackText">Processing feedback...</p>
+            <button class="close-btn" onclick="closeReport()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestionIndex = 0;
+        let responses = [];
+
+        // Ensure webcam is accessible
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById("webcam").srcObject = stream;
+            } catch (error) {
+                console.error("Webcam access denied or unavailable:", error);
+                showPopup("⚠️ Cannot access webcam. Please enable camera permissions.", true);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", setupCamera);
+
+        function showPopup(message, isError = false) {
+            let popup = document.getElementById("popup");
+            popup.innerText = message;
+            popup.style.display = "block";
+            popup.style.backgroundColor = isError ? "#D32F2F" : "#1565C0";
+            setTimeout(() => { popup.style.display = "none"; }, 2500);
+        }
+
+        function getNextQuestion() {
+            axios.get(`/get_question/${currentQuestionIndex}`).then(response => {
+                document.getElementById("questionText").innerText = response.data.question;
+                document.getElementById("aiVoice").src = response.data.audio_url;
+                currentQuestionIndex++;
+
+                if (response.data.index === -1) {
+                    document.querySelector(".next-btn").style.display = "none";
+                    document.querySelector(".record-btn").style.display = "none";
+                    setTimeout(showReport, 2000);
+                }
+            });
+        }
+
+        function startRecording() {
+            showPopup("🎤 Recording Started...");
+            let audioChunks = [];
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                let mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                mediaRecorder.onstop = () => processRecording(audioChunks);
+                setTimeout(() => { mediaRecorder.stop(); }, 7000);
+            }).catch(error => {
+                console.error("Microphone error:", error);
+                showPopup("⚠️ Cannot access microphone.", true);
+            });
+        }
+
+        async function processRecording(audioChunks) {
+            showPopup("⏹ Processing Response...");
+            const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+            let formData = new FormData();
+            formData.append("audio", audioBlob, "response.wav");
+
+            try {
+                let response = await axios.post("/analyze_response", formData);
+                if (response.data.error) {
+                    showPopup("⚠️ Error processing response. Using default feedback.", true);
+                    generateFakeFeedback();
+                } else {
+                    responses.push({
+                        question: document.getElementById("questionText").innerText,
+                        clarity: response.data.clarity_score,
+                        transcription: response.data.transcription,
+                        finalScore: response.data.final_score,
+                        improvements: response.data.improvements
+                    });
+                }
+            } catch (error) {
+                console.error("Server Error:", error);
+                showPopup("⚠️ Server error. Using default feedback.", true);
+                generateFakeFeedback();
+            }
+        }
+
+        function generateFakeFeedback() {
+            responses.push({
+                question: "Unknown (Recording Issue)",
+                clarity: 60,
+                transcription: "Your response could not be fully analyzed.",
+                finalScore: 65,
+                improvements: "Try speaking more clearly and confidently."
+            });
+        }
+
+        function showReport() {
+            if (responses.length === 0) {
+                document.getElementById("feedbackText").innerHTML = "<p>No responses recorded. Try again.</p>";
+            } else {
+                let feedbackContent = "<h2>Interview Summary</h2>";
+                responses.forEach((resp, index) => {
+                    feedbackContent += `
+                        <div class="feedback-section">
+                            <h3><b>Question ${index + 1}:</b> ${resp.question}</h3>
+                            <p><b>Response:</b> "${resp.transcription}"</p>
+                            <p><b>Clarity Score:</b> ${resp.clarity}/100</p>
+                            <p><b>Improvements:</b> ${resp.improvements}</p>
+                        </div>
+                        <hr>
+                    `;
+                });
+
+                document.getElementById("feedbackText").innerHTML = feedbackContent;
+            }
+            document.getElementById("feedbackModal").style.display = "block";
+        }
+
+        function closeReport() {
+            document.getElementById("feedbackModal").style.display = "none";
+        }
+    </script>
+</body>
+</html>
+

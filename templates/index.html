@@ -3,79 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Mock Interview</title>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <style>
-        video {
-            width: 640px;
-            height: 480px;
-            border: 2px solid black;
-        }
-        #feedback {
-            margin-top: 20px;
-            color: white;
-            font-size: 18px;
-        }
-    </style>
+    <title>Career Path Navigator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
 </head>
-<body style="background-color: #1a202c; color: white; text-align: center;">
+<body class="bg-gray-900 text-white">
 
-    <h1>Virtual Mock Interview</h1>
+    <!-- Navbar -->
+    <nav class="bg-blue-700 p-6 text-white flex justify-between items-center shadow-lg fixed w-full top-0 z-50">
+        <h1 class="text-4xl font-extrabold">Career Path Navigator</h1>
+        <div class="space-x-6 text-lg">
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('mock_interview') }}">Mock Interview</a>
+            <a href="{{ url_for('resume_optimizer') }}">Resume Optimization</a>
+        </div>
+    </nav>
 
-    <h2>Facial Expression Analysis</h2>
-    <video id="webcam" autoplay></video>
-    <button onclick="captureFace()">Analyze Face</button>
-    <div id="faceFeedback"></div>
+    <!-- Hero Section -->
+    <header class="h-screen flex items-center justify-center text-center bg-gradient-to-r from-blue-500 to-indigo-700 shadow-2xl">
+        <div>
+            <h2 class="text-6xl font-extrabold text-yellow-300 animate-pulse">Your Guide to Career Success</h2>
+            <p class="text-lg mt-4">AI-powered career development at your fingertips.</p>
+        </div>
+    </header>
 
-    <h2>Speech Clarity Analysis</h2>
-    <input type="file" id="audioFile" accept="audio/*">
-    <button onclick="analyzeSpeech()">Analyze Speech</button>
-    <div id="speechFeedback"></div>
+    <!-- Footer -->
+    <footer class="bg-gray-700 text-white text-center p-6 mt-10 shadow-md">
+        <p>&copy; 2025 Career Path Navigator. All Rights Reserved.</p>
+    </footer>
 
-    <script>
-        // Access webcam
-        const videoElement = document.getElementById("webcam");
-        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-            videoElement.srcObject = stream;
-        });
-
-        // Capture face and send to backend for analysis
-        function captureFace() {
-            const canvas = document.createElement("canvas");
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-            canvas.toBlob(blob => {
-                let formData = new FormData();
-                formData.append("image", blob);
-
-                axios.post("/analyze_face", formData)
-                    .then(response => {
-                        document.getElementById("faceFeedback").innerText = "Detected Emotion: " + response.data.emotion;
-                    });
-            }, "image/jpeg");
-        }
-
-        // Analyze speech clarity
-        function analyzeSpeech() {
-            let fileInput = document.getElementById("audioFile");
-            if (!fileInput.files.length) {
-                alert("Please upload an audio file.");
-                return;
-            }
-
-            let formData = new FormData();
-            formData.append("audio", fileInput.files[0]);
-
-            axios.post("/analyze_audio", formData)
-                .then(response => {
-                    let text = response.data.text || "Could not recognize speech";
-                    let clarity = response.data.clarity_score || "N/A";
-                    document.getElementById("speechFeedback").innerHTML = `Transcribed Text: ${text}<br>Clarity Score: ${clarity}`;
-                });
-        }
-    </script>
 </body>
 </html>
+
